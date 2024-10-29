@@ -124,7 +124,7 @@ bot.on('photo', async (msg) => {
     const imageResponse = await axios.get(photoUrl, { responseType: 'arraybuffer' });
     const imageBuffer = Buffer.from(imageResponse.data, 'binary').toString('base64');
 
-    const model = userModels.get(chatId) || 'gpt';
+    const model = userModels.get(chatId) || 'gemini';
     let analysis;
 
     if (model === 'gemini') {
