@@ -227,8 +227,8 @@ bot.on('photo', async (msg) => {
     }
 
     // Sanitize and send formatted analysis
-    const sanitizedAnalysis = sanitizeMarkdown(analysis);
-    await bot.sendMessage(chatId, sanitizedAnalysis, { parse_mode: 'MarkdownV2' });
+    const formattedanalysis = formatTelegramMessage(analysis);
+    await bot.sendMessage(chatId, formattedanalysis, { parse_mode: 'MarkdownV2' });
   } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that image. Please try again.');
