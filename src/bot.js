@@ -10,15 +10,53 @@ const bot = new TelegramBot(config.telegramToken, { polling: true });
 const userModels = new Map();
 const conversationManager = new ConversationManager();
 
-// Function to sanitize Markdown text
-function sanitizeMarkdown(text) {
-  const escapeChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-  let sanitizedText = text;
-  escapeChars.forEach(char => {
+/// Function to escape special characters in code blocks
+function escapeCodeBlock(text) {
+  return text.replace(/[`\\]/g, '\\$&');
+}
+
+// Function to escape special characters in link URLs
+function escapeLinkUrl(text) {
+  return text.replace(/[)\\]/g, '\\$&');
+}
+
+// Function to escape special characters in regular text
+function escapeRegularText(text) {
+  const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
+  let escapedText = text;
+
+  // First escape backslashes
+  escapedText = escapedText.replace(/\\/g, '\\\\');
+
+  // Then escape all other special characters
+  specialChars.forEach(char => {
     const regex = new RegExp(`\\${char}`, 'g');
-    sanitizedText = sanitizedText.replace(regex, `\\${char}`);
+    escapedText = escapedText.replace(regex, `\\${char}`);
   });
-  return sanitizedText;
+
+  return escapedText;
+}
+
+// Main function to handle Markdown formatting
+function formatTelegramMessage(text) {
+  // Split the text into code blocks and non-code blocks
+  const segments = text.split(/(```[\s\S]*?```|`[^`]*`)/g);
+  
+  return segments.map((segment, index) => {
+    // Check if this is a code block
+    if (segment.startsWith('```') && segment.endsWith('```')) {
+      // Handle multiline code blocks
+      const code = segment.slice(3, -3);
+      return `\`\`\`${escapeCodeBlock(code)}\`\`\``;
+    } else if (segment.startsWith('`') && segment.endsWith('`')) {
+      // Handle inline code
+      const code = segment.slice(1, -1);
+      return `\`${escapeCodeBlock(code)}\``;
+    } else {
+      // Handle regular text
+      return escapeRegularText(segment);
+    }
+  }).join('');
 }
 
 // Handle /start command
@@ -67,9 +105,14 @@ bot.onText(/\/llama/, (msg) => {
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
   const text = msg.text;
+  const botUsername = (await bot.getMe()).username;
+  const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
 
   // Ignore commands and non-text messages
   if (!text || text.startsWith('/') || msg.photo) return;
+
+  // Check if the bot is mentioned in a group chat
+  if (isGroupChat && !text.includes(`@${botUsername}`)) return;
 
   try {
     bot.sendChatAction(chatId, 'typing');
@@ -99,9 +142,11 @@ bot.on('message', async (msg) => {
     conversationManager.add(chatId, { role: 'bot', content: response });
 
     // Sanitize and send formatted response with model tag
-    const sanitizedResponse = sanitizeMarkdown(`[${model}] ${response}`);
-    await bot.sendMessage(chatId, sanitizedResponse, { parse_mode: 'Markdown' });
-  } catch (error) {
+    const formattedResponse = formatTelegramMessage(response);
+    await bot.sendMessage(chatId, formattedResponse, { 
+      parse_mode: 'MarkdownV2'
+    });
+   } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I encountered an error. Please try again later.');
   }
@@ -135,7 +180,7 @@ bot.on('photo', async (msg) => {
 
     // Sanitize and send formatted analysis
     const sanitizedAnalysis = sanitizeMarkdown(analysis);
-    await bot.sendMessage(chatId, sanitizedAnalysis, { parse_mode: 'Markdown' });
+    await bot.sendMessage(chatId, sanitizedAnalysis, { parse_mode: 'MarkdownV2' });
   } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that image. Please try again.');
