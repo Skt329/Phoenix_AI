@@ -1,3 +1,16 @@
+/**
+ * The above code is a Telegram bot written in JavaScript that serves as an AI assistant with
+ * multimodal capabilities, allowing users to interact with different AI models for text and image
+ * analysis.
+ * @param text - The `text` parameter in the code refers to the text content of messages sent to the
+ * Telegram bot. This parameter is used to analyze and process text messages, as well as to provide
+ * responses based on the user input. The bot can handle various commands, such as switching between
+ * different AI models (Gem
+ * @returns The code provided is a Node.js script that creates a Telegram bot with multimodal
+ * capabilities. It uses the `node-telegram-bot-api` library to interact with Telegram, `axios` for
+ * making HTTP requests, and several custom services for handling different AI models (GPT, Gemini,
+ * LLaMA) and image analysis.
+ */
 import TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
 import { config } from './config.js';
@@ -9,54 +22,89 @@ import { ConversationManager } from './utils/history.js';
 const bot = new TelegramBot(config.telegramToken, { polling: true });
 const userModels = new Map();
 const conversationManager = new ConversationManager();
-
-/// Function to escape special characters in code blocks
+// Function to escape special characters in code blocks
 function escapeCodeBlock(text) {
+  // In code blocks, only escape backticks and backslashes
   return text.replace(/[`\\]/g, '\\$&');
 }
 
 // Function to escape special characters in link URLs
 function escapeLinkUrl(text) {
+  // In URLs, only escape parentheses and backslashes
   return text.replace(/[)\\]/g, '\\$&');
 }
 
 // Function to escape special characters in regular text
 function escapeRegularText(text) {
-  const specialChars = ['_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'];
-  let escapedText = text;
-
-  // First escape backslashes
-  escapedText = escapedText.replace(/\\/g, '\\\\');
-
-  // Then escape all other special characters
-  specialChars.forEach(char => {
-    const regex = new RegExp(`\\${char}`, 'g');
-    escapedText = escapedText.replace(regex, `\\${char}`);
-  });
-
-  return escapedText;
+  // All special characters that need escaping in regular text
+  const specialChars = [
+    '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', 
+    '-', '=', '|', '{', '}', '.', '!', '\\'
+  ];
+  
+  // Create a single regex pattern for all special characters
+  const pattern = new RegExp(
+    '([' + specialChars.map(c => '\\' + c).join('') + '])', 
+    'g'
+  );
+  
+  // Escape each special character with a backslash
+  return text.replace(pattern, '\\$1');
 }
 
-// Main function to handle Markdown formatting
+// Function to handle inline links
+function formatLinks(text) {
+  // Match markdown links [text](url)
+  const linkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+  
+  return text.replace(linkPattern, (match, linkText, url) => {
+    const escapedText = escapeRegularText(linkText);
+    const escapedUrl = escapeLinkUrl(url);
+    return `[${escapedText}](${escapedUrl})`;
+  });
+}
+
+// Main formatting function
 function formatTelegramMessage(text) {
-  // Split the text into code blocks and non-code blocks
+  // Early return for empty or null text
+  if (!text) return '';
+  
+  // Split the text into segments: code blocks and regular text
   const segments = text.split(/(```[\s\S]*?```|`[^`]*`)/g);
   
-  return segments.map((segment, index) => {
-    // Check if this is a code block
+  let formatted = segments.map((segment) => {
+    // Handle multiline code blocks
     if (segment.startsWith('```') && segment.endsWith('```')) {
-      // Handle multiline code blocks
-      const code = segment.slice(3, -3);
-      return `\`\`\`${escapeCodeBlock(code)}\`\`\``;
-    } else if (segment.startsWith('`') && segment.endsWith('`')) {
-      // Handle inline code
-      const code = segment.slice(1, -1);
-      return `\`${escapeCodeBlock(code)}\``;
-    } else {
-      // Handle regular text
-      return escapeRegularText(segment);
+      const language = segment.split('\n')[0].slice(3);
+      const code = segment
+        .slice(segment.indexOf('\n') + 1, -3)
+        .trim();
+      return '```' + language + '\n' + escapeCodeBlock(code) + '```';
     }
+    
+    // Handle inline code
+    if (segment.startsWith('`') && segment.endsWith('`')) {
+      const code = segment.slice(1, -1);
+      return '`' + escapeCodeBlock(code) + '`';
+    }
+    
+    // Handle regular text with links
+    if (segment.trim()) {
+      let processed = formatLinks(segment);
+      return escapeRegularText(processed);
+    }
+    
+    return segment;
   }).join('');
+  
+  // Handle edge cases for lists and line breaks
+  formatted = formatted
+    // Ensure proper spacing after list markers
+    .replace(/^([\s]*)[•\-*+](\s*)/gm, '$1• ')
+    // Preserve line breaks
+    .replace(/\n/g, '\n');
+    
+  return formatted;
 }
 
 // Handle /start command
@@ -125,11 +173,11 @@ bot.on('message', async (msg) => {
     // Add user message to history
     history.push({ role: 'user', content: text });
 
-    let response;
+    let response = '';
     if (model === 'gemini') {
       response = await getGeminiResponse(history);
     } else if (model === 'llama') {
-      response = await getLlamaResponse(text);
+      response = await getLlamaResponse(history);
     } else {
       response = await getGPTResponse(history);
     }
