@@ -36,20 +36,18 @@ function escapeLinkUrl(text) {
 
 // Function to escape special characters in regular text
 function escapeRegularText(text) {
-  // All special characters that need escaping in regular text
-  const specialChars = [
-    '_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', 
-    '-', '=', '|', '{', '}', '.', '!', '\\'
-  ];
+  // First, temporarily replace valid markdown formatting
+  text = text.replace(/\*\*(.*?)\*\*/g, '§BOLD§$1§BOLD§');
+  text = text.replace(/\*(.*?)\*/g, '§ITALIC§$1§ITALIC§');
   
-  // Create a single regex pattern for all special characters
-  const pattern = new RegExp(
-    '([' + specialChars.map(c => '\\' + c).join('') + '])', 
-    'g'
-  );
+  // Escape special characters for MarkdownV2
+  text = text.replace(/([_\[\]()~`>#+=|{}.!-])/g, '\\$1');
   
-  // Escape each special character with a backslash
-  return text.replace(pattern, '\\$1');
+  // Restore markdown formatting
+  text = text.replace(/§BOLD§(.*?)§BOLD§/g, '**$1**');
+  text = text.replace(/§ITALIC§(.*?)§ITALIC§/g, '*$1*');
+  
+  return text;
 }
 
 // Function to handle inline links
@@ -236,3 +234,7 @@ bot.on('photo', async (msg) => {
 });
 
 console.log('Multimodal Bot is running...');
+const text = "This is **bold** and *italic*";
+console.log(formatTelegramMessage(text));
+// If it outputs: "This is \*\*bold\*\* and \*italic\*"
+// Then yes, there's an over-escaping problem
