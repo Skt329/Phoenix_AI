@@ -17,6 +17,7 @@ import { config } from './config.js';
 import { getGPTResponse, analyzeImage } from './services/openai.js';
 import { getGeminiResponse, analyzeImageWithGemini } from './services/gemini.js';
 import { getLlamaResponse } from './services/llama.js';
+import { getMistralResponse } from './services/mistral.js';
 import { ConversationManager } from './utils/history.js';
 import { setupCommands } from './utils/botmenu.js';
 import { formatTelegramMessage } from './utils/output_message_format.js';
@@ -57,6 +58,8 @@ bot.on('message', async (msg) => {
       response = await getGeminiResponse(history);
     } else if (model === 'llama') {
       response = await getLlamaResponse(history);
+    }else if (model === 'mistral') {
+      response = await getMistralResponse(history);
     } else {
       response = await getGPTResponse(history);
     }

@@ -11,6 +11,7 @@ export function setupCommands(bot, conversationManager, userModels) {
         '/gemini - Switch to Gemini mode\n' +
         '/gpt - Switch to GPT mode\n' +
         '/llama - Switch to LLaMA mode\n\n' +
+        '/mistral - Switch to Mistral mode\n\n' +
         'You can send me text or images to analyze!'
       );
     });
@@ -40,4 +41,11 @@ export function setupCommands(bot, conversationManager, userModels) {
       userModels.set(chatId, 'llama');
       bot.sendMessage(chatId, 'Switched to LLaMA mode!');
     });
+
+    bot.onText(/\/mistral/, (msg) => {
+      const chatId = msg.chat.id;
+      userModels.set(chatId, 'mistral');
+      bot.sendMessage(chatId, 'Switched to Mistral mode!');
+    });
   }
+  
