@@ -6,5 +6,6 @@ export const config = {
   openaiKey: process.env.OPENAI_API_KEY,
   geminiKey: process.env.GEMINI_API_KEY,
   nvidiaApiKey: process.env.NVIDIA_API_KEY,
-  mistralKey: process.env.MISTRAL_API_KEY
+  mistralKey: process.env.MISTRAL_API_KEY,
+  huggingfaceToken: process.env.HUGGINGFACE_TOKEN
 };

@@ -11,6 +11,7 @@
  * making HTTP requests, and several custom services for handling different AI models (GPT, Gemini,
  * LLaMA) and image analysis.
  */
+import fs from 'fs';
 import TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
 import { config } from './config.js';
@@ -21,12 +22,35 @@ import { getMistralResponse } from './services/mistral.js';
 import { ConversationManager } from './utils/history.js';
 import { setupCommands } from './utils/botmenu.js';
 import { formatTelegramMessage } from './utils/output_message_format.js';
+import { generateImage } from './services/stablediffusion.js';
 
 const bot = new TelegramBot(config.telegramToken, { polling: true });
 const userModels = new Map();
 const conversationManager = new ConversationManager();
 
 
+
+
+// Add this command handler after your other bot.on handlers
+bot.onText(/\/imagine (.+)/, async (msg, match) => {
+    const chatId = msg.chat.id;
+    const prompt = match[1];
+
+    try {
+        bot.sendChatAction(chatId, 'upload_photo');
+
+        // Generate image
+        const imageBuffer = await generateImage(prompt);
+
+        // Send the image back to user
+        await bot.sendPhoto(chatId, imageBuffer, {
+            caption: `Generated image for: ${prompt}`
+        });
+    } catch (error) {
+        console.error('Image generation error:', error);
+        bot.sendMessage(chatId, 'Sorry, I had trouble generating that image. Please try again.');
+    }
+});
 // Setup command handlers
 setupCommands(bot, conversationManager, userModels);
 // Handle text messages
@@ -73,6 +97,12 @@ bot.on('message', async (msg) => {
 
     // Sanitize and send formatted response with model tag
     const formattedResponse = formatTelegramMessage(response);
+     // Save debug info to file
+     const debugContent = `Original Response:\n${response}\n\nFormatted Response:\n${formattedResponse}\n\n---\n`;
+     const debugPath = `debug_${chatId}_${Date.now()}.txt`;
+     await fs.promises.appendFile(debugPath, debugContent, 'utf8')
+       .catch(err => console.error('Debug file write error:', err));
+ 
     await bot.sendMessage(chatId, formattedResponse, {
       parse_mode: 'MarkdownV2'
     });
