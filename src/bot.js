@@ -144,7 +144,7 @@ bot.on('photo', async (msg) => {
     const model = userModels.get(chatId) || 'gemini';
     let analysis;
 
-    if (model === 'gemini') {
+    if (model === 'gpt') {
       analysis = await analyzeImage(photoUrl, caption);
     } else {
       analysis = await analyzeImageWithGemini(imageBuffer, caption);
