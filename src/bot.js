@@ -109,12 +109,6 @@ bot.on('message', async (msg) => {
 
     // Sanitize and send formatted response with model tag
     const formattedResponse = formatTelegramMessage(response);
-     // Save debug info to file
-     const debugContent = `Original Response:\n${response}\n\nFormatted Response:\n${formattedResponse}\n\n---\n`;
-     const debugPath = `debug_${chatId}_${Date.now()}.txt`;
-     await fs.promises.appendFile(debugPath, debugContent, 'utf8')
-       .catch(err => console.error('Debug file write error:', err));
- 
     await bot.sendMessage(chatId, formattedResponse, {
       parse_mode: 'MarkdownV2'
     });
