@@ -11,7 +11,6 @@
  * making HTTP requests, and several custom services for handling different AI models (GPT, Gemini,
  * LLaMA) and image analysis.
  */
-import fs from 'fs';
 import TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
 import { config } from './config.js';
@@ -41,10 +40,10 @@ const userModels = new Map();
 const conversationManager = new ConversationManager();
 
 
-
+setupCommands(bot, conversationManager, userModels);
 
 // Add this command handler after your other bot.on handlers
-bot.onText(/\/imagine (.+)/, async (msg, match) => {
+bot.onText(/\/imagine(?:@\w+)? (.+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const prompt = match[1];
 
@@ -63,8 +62,7 @@ bot.onText(/\/imagine (.+)/, async (msg, match) => {
         bot.sendMessage(chatId, 'Sorry, I had trouble generating that image. Please try again.');
     }
 });
-// Setup command handlers
-setupCommands(bot, conversationManager, userModels);
+
 // Handle text messages
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
@@ -72,11 +70,22 @@ bot.on('message', async (msg) => {
   const botUsername = (await bot.getMe()).username;
   const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
 
-  // Ignore commands and non-text messages
-  if (!text || text.startsWith('/') || msg.photo) return;
+ // Ignore if no text or is a photo
+ if (!text || msg.photo) return;
 
-  // Check if the bot is mentioned in a group chat
-  if (isGroupChat && !text.includes(`@${botUsername}`)) return;
+ // Check for commands with username in group
+ if (isGroupChat) {
+     // Remove spaces between username and command
+     const normalizedText = text.replace(`@${botUsername}`, '').trim();
+     if (normalizedText.startsWith('/')) return;
+ } else {
+     // Direct message command check
+     if (text.trimStart().startsWith('/')) return;
+ }
+
+ // Check if bot is mentioned in group chat
+ if (isGroupChat && !text.includes(`@${botUsername}`)) return;
+
 
   try {
     bot.sendChatAction(chatId, 'typing');
