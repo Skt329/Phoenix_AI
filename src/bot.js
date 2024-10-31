@@ -23,7 +23,19 @@ import { ConversationManager } from './utils/history.js';
 import { setupCommands } from './utils/botmenu.js';
 import { formatTelegramMessage } from './utils/output_message_format.js';
 import { generateImage } from './services/stablediffusion.js';
+import express from 'express';
+const app = express();
+const port = process.env.PORT || 3000;
 
+// Add basic route
+app.get('/', (req, res) => {
+  res.send('Bot is running!');
+});
+
+// Add this after your bot initialization code
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
 const bot = new TelegramBot(config.telegramToken, { polling: true });
 const userModels = new Map();
 const conversationManager = new ConversationManager();
