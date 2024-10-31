@@ -145,9 +145,9 @@ bot.on('photo', async (msg) => {
     let analysis;
 
     if (model === 'gemini') {
-      analysis = await analyzeImageWithGemini(imageBuffer, caption);
-    } else {
       analysis = await analyzeImage(photoUrl, caption);
+    } else {
+      analysis = await analyzeImageWithGemini(imageBuffer, caption);
     }
 
     // Sanitize and send formatted analysis
