@@ -47,6 +47,12 @@ setupCommands(bot, conversationManager, userModels);
 bot.onText(/\/imagine(?:@\w+)? (.+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const prompt = match[1];
+    const prohibitedWords = ['Saurab', 'Saurabh', 'Saurav', 'Tiwari', 'tivari', 'Tiwary', 'soura', 'saur'];
+    const regex = new RegExp(`\\b(${prohibitedWords.join('|')})\\b`, 'i');
+    if (regex.test(prompt)) {
+        await bot.sendMessage(chatId, 'Maalik pe no Comment.');
+        return; // Stop further processing
+    }
 
     try {
         bot.sendChatAction(chatId, 'upload_photo');
@@ -87,7 +93,20 @@ bot.on('message', async (msg) => {
  // Check if bot is mentioned in group chat
  if (isGroupChat && !text.includes(`@${botUsername}`)) return;
 
-
+  // Detect prohibited words in user input
+  const prohibitedWords = ['porn', 'xvideos'];
+  const regex = new RegExp(`\\b(${prohibitedWords.join('|')})\\b`, 'i');
+  if (regex.test(text)) {
+      await bot.sendMessage(chatId, 'Bhag Bsdk! Ye Koi Randikhana Hai.');
+      return; // Stop further processing
+  }
+  const OwnerWords = ['Saurab', 'Saurabh', 'Saurav', 'Tiwari', 'tivari', 'Tiwary', 'soura', 'saur'];
+  const regexx = new RegExp(`\\b(${OwnerWords.join('|')})\\b`, 'i');
+  if (regexx.test(text)) {
+      await bot.sendMessage(chatId, 'Maalik pe no Comment.');
+      return; // Stop further processing
+  }
+  
   try {
     bot.sendChatAction(chatId, 'typing');
 
