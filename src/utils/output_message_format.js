@@ -1,4 +1,3 @@
-import fs from 'fs';
 function convertToTelegramHTML(text) {
     if (!text) return '';
 
@@ -61,7 +60,7 @@ function convertToTelegramHTML(text) {
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-        }</code></pre>`;
+            }</code></pre>`;
     });
 
     // Restore inline code
@@ -72,23 +71,23 @@ function convertToTelegramHTML(text) {
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-        }</code>`;
+            }</code>`;
     });
 
     return formatted;
 }
 function findSafeSplitPosition(text, maxLength) {
     let splitPos = maxLength;
-    
+
     // First check for unclosed <pre> and <code> tags
     const codeBlockRegex = /<pre><code[\s\S]*?<\/code><\/pre>/g;
     let match;
     let lastCodeBlockEnd = 0;
-    
+
     while ((match = codeBlockRegex.exec(text)) !== null) {
         const blockStart = match.index;
         const blockEnd = blockStart + match[0].length;
-        
+
         // If the split position is inside a code block, move it before the block
         if (splitPos > blockStart && splitPos < blockEnd) {
             splitPos = blockStart;
@@ -101,15 +100,15 @@ function findSafeSplitPosition(text, maxLength) {
     const tagPattern = /<\/?([a-zA-Z0-9-]+)(?:\s[^>]*)?>/g;
     const sensitiveTags = ['b', 'i', 'u', 's', 'code', 'pre', 'a'];
     const openTags = [];
-    
+
     let tagMatch;
     while ((tagMatch = tagPattern.exec(text)) !== null && tagMatch.index < splitPos) {
         const tag = tagMatch[0];
         const tagName = tagMatch[1];
         const isClosingTag = tag.startsWith('</');
-        
+
         if (!sensitiveTags.includes(tagName)) continue;
-        
+
         if (isClosingTag) {
             const index = openTags.lastIndexOf(tagName);
             if (index !== -1) {
@@ -133,7 +132,7 @@ function findSafeSplitPosition(text, maxLength) {
     const lastPeriod = text.lastIndexOf('. ', splitPos);
     const lastNewline = text.lastIndexOf('\n', splitPos);
     const lastSpace = text.lastIndexOf(' ', splitPos);
-    
+
     // Prefer splitting at sentence end, then line end, then word boundary
     if (lastPeriod > 0 && splitPos - lastPeriod < 100) {
         return lastPeriod + 1;
@@ -148,30 +147,28 @@ function findSafeSplitPosition(text, maxLength) {
 // Main function to format and split messages
 export function formatTelegramHTMLMessage(text) {
     if (!text) return [];
-    
+
     const MAX_LENGTH = 4096; // Telegram's message length limit
     const formattedText = convertToTelegramHTML(text);
-    
+
     if (formattedText.length <= MAX_LENGTH) {
-        // Save as single chunk
-        fs.writeFileSync('chunk_1.txt', formattedText);
+
         return [formattedText];
     }
-    
+
     const messages = [];
     let remainingText = formattedText;
-    let chunkNumber = 1;
-    
+
+
     while (remainingText.length > 0) {
         if (remainingText.length <= MAX_LENGTH) {
             messages.push(remainingText);
-             // Save final chunk
-             fs.writeFileSync(`chunk_${chunkNumber}.txt`, remainingText);
+
             break;
         }
-        
+
         const splitPos = findSafeSplitPosition(remainingText, MAX_LENGTH);
-        
+
         // Guard against infinite loop
         if (splitPos <= 0) {
             // Unable to find a safe split position; force split at MAX_LENGTH
@@ -180,12 +177,11 @@ export function formatTelegramHTMLMessage(text) {
         } else {
             const chunk = remainingText.substring(0, splitPos).trim();
             messages.push(chunk);
-            // Save chunk
-            fs.writeFileSync(`chunk_${chunkNumber}.txt`, chunk);
+
             remainingText = remainingText.substring(splitPos).trim();
         }
-        chunkNumber++;
+
     }
-    
+
     return messages;
 }
