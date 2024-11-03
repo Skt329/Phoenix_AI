@@ -47,12 +47,25 @@ setupCommands(bot, conversationManager, userModels);
 bot.onText(/\/imagine(?:@\w+)? (.+)/, async (msg, match) => {
     const chatId = msg.chat.id;
     const prompt = match[1];
-    const prohibitedWords = ['Saurab', 'Saurabh', 'Saurav', 'Tiwari', 'tivari', 'Tiwary', 'soura', 'saur'];
-    const regex = new RegExp(`\\b(${prohibitedWords.join('|')})\\b`, 'i');
-    if (regex.test(prompt)) {
-        await bot.sendMessage(chatId, 'Maalik pe no Comment.');
-        return; // Stop further processing
-    }
+   // Define Owner Words
+const OwnerWords = ['Saurab', 'Saurabh', 'Saurav', 'Tiwari', 'tivari', 'Tiwary', 'soura', 'saur','tiwa'];
+
+// Function to create a regex pattern that allows repeated letters in a word
+function createPatternWithRepeatedLetters(word) {
+    const letters = word.split('');
+    const pattern = letters.map(letter => `${letter}+`).join('');
+    return pattern;
+}
+
+// Build the regex pattern
+const ownerPatterns = OwnerWords.map(word => createPatternWithRepeatedLetters(word));
+const regexx = new RegExp(`(${ownerPatterns.join('|')})`, 'i');
+
+// Check if the input text matches the pattern
+if (regexx.test(prompt)) {
+    await bot.sendMessage(chatId, 'Maalik pe no Comment.');
+    return; // Stop further processing
+}
 
     try {
         bot.sendChatAction(chatId, 'upload_photo');
@@ -100,12 +113,25 @@ bot.on('message', async (msg) => {
       await bot.sendMessage(chatId, 'Bhag Bsdk! Ye Koi Randikhana Hai.');
       return; // Stop further processing
   }
-  const OwnerWords = ['Saurab', 'Saurabh', 'Saurav', 'Tiwari', 'tivari', 'Tiwary', 'soura', 'saur'];
-  const regexx = new RegExp(`\\b(${OwnerWords.join('|')})\\b`, 'i');
-  if (regexx.test(text)) {
-      await bot.sendMessage(chatId, 'Maalik pe no Comment.');
-      return; // Stop further processing
-  }
+  // Define Owner Words
+const OwnerWords = ['Saurab', 'Saurabh', 'Saurav', 'Tiwari', 'tivari', 'Tiwary', 'soura', 'saur','tiwa'];
+
+// Function to create a regex pattern that allows repeated letters in a word
+function createPatternWithRepeatedLetters(word) {
+    const letters = word.split('');
+    const pattern = letters.map(letter => `${letter}+`).join('');
+    return pattern;
+}
+
+// Build the regex pattern
+const ownerPatterns = OwnerWords.map(word => createPatternWithRepeatedLetters(word));
+const regexx = new RegExp(`(${ownerPatterns.join('|')})`, 'i');
+
+// Check if the input text matches the pattern
+if (regexx.test(text)) {
+    await bot.sendMessage(chatId, 'Maalik pe no Comment.');
+    return; // Stop further processing
+}
   
   try {
     bot.sendChatAction(chatId, 'typing');
