@@ -210,7 +210,7 @@ bot.on('photo', async (msg) => {
     }
 
     // Sanitize and send formatted analysis
-    const messageChunks =  formatTelegramHTMLMessage(response);
+    const messageChunks =  formatTelegramHTMLMessage(analysis);
     // Send each chunk as a separate message
     for (const chunk of messageChunks) {
       await bot.sendMessage(chatId, chunk, {
