@@ -210,8 +210,13 @@ bot.on('photo', async (msg) => {
     }
 
     // Sanitize and send formatted analysis
-    const formattedanalysis = formatTelegramMessage(analysis);
-    await bot.sendMessage(chatId, formattedanalysis, { parse_mode: 'MarkdownV2' });
+    const messageChunks =  formatTelegramHTMLMessage(response);
+    // Send each chunk as a separate message
+    for (const chunk of messageChunks) {
+      await bot.sendMessage(chatId, chunk, {
+        parse_mode: 'HTML',
+      });
+    }
   } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that image. Please try again.');
