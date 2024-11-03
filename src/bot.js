@@ -20,11 +20,12 @@ import { getLlamaResponse } from './services/llama.js';
 import { getMistralResponse } from './services/mistral.js';
 import { ConversationManager } from './utils/history.js';
 import { setupCommands } from './utils/botmenu.js';
-import { formatTelegramMessage } from './utils/output_message_format.js';
+import { formatTelegramHTMLMessage } from './utils/output_message_format.js';
 import { generateImage } from './services/stablediffusion.js';
 import express from 'express';
 const app = express();
 const port = process.env.PORT || 3000;
+
 
 // Add basic route
 app.get('/', (req, res) => {
@@ -94,10 +95,10 @@ bot.on('message', async (msg) => {
 
     // Fetch message history
     const history = conversationManager.get(chatId);
-
+console.log(history);
     // Add user message to history
     history.push({ role: 'user', content: text });
-
+console.log(history);
     let response = '';
     if (model === 'gemini') {
       response = await getGeminiResponse(history);
@@ -116,11 +117,13 @@ bot.on('message', async (msg) => {
     conversationManager.add(chatId, { role: 'user', content: text });
     conversationManager.add(chatId, { role: 'bot', content: response });
 
-    // Sanitize and send formatted response with model tag
-    const formattedResponse = formatTelegramMessage(response);
-    await bot.sendMessage(chatId, formattedResponse, {
-      parse_mode: 'MarkdownV2'
-    });
+   const messageChunks =  formatTelegramHTMLMessage(response);
+// Send each chunk as a separate message
+for (const chunk of messageChunks) {
+  await bot.sendMessage(chatId, chunk, {
+    parse_mode: 'HTML',
+  });
+}
   } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I encountered an error. Please try again later.');
@@ -163,3 +166,4 @@ bot.on('photo', async (msg) => {
 });
 
 console.log('Multimodal Bot is running...');
+
