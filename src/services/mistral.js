@@ -15,10 +15,7 @@ export async function getMistralResponse(messages) {
 
     const completion = await mistral.chat.complete({
       model: 'mistral-large-latest',
-      messages: [
-        { role: 'system', content: 'You are a helpful assistant.' },
-        ...formattedMessages
-      ],
+      messages: formattedMessages,
       temperature: 0.7,
       maxTokens: 1000
     });
