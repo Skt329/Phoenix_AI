@@ -145,7 +145,7 @@ function findSafeSplitPosition(text, maxLength) {
     return splitPos;
 }
 // Main function to format and split messages
-export function formatTelegramHTMLMessage(text) {
+function formatTelegramHTMLMessage(text) {
     if (!text) return [];
 
     const MAX_LENGTH = 4096; // Telegram's message length limit
@@ -184,4 +184,13 @@ export function formatTelegramHTMLMessage(text) {
     }
 
     return messages;
+}
+export async function Output (text,bot,chatId) {
+    const messageChunks =  formatTelegramHTMLMessage(text);
+// Send each chunk as a separate message
+for (const chunk of messageChunks) {
+  await bot.sendMessage(chatId, chunk, {
+    parse_mode: 'HTML',
+  });
+}
 }

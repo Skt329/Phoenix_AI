@@ -11,17 +11,16 @@
  * making HTTP requests, and several custom services for handling different AI models (GPT, Gemini,
  * LLaMA) and image analysis.
  */
-import TelegramBot from 'node-telegram-bot-api';
 import axios from 'axios';
-import { config } from './config.js';
 import { getGPTResponse, analyzeImage } from './services/openai.js';
 import { getGeminiResponse, analyzeImageWithGemini } from './services/gemini.js';
 import { getLlamaResponse } from './services/llama.js';
 import { getMistralResponse } from './services/mistral.js';
 import { ConversationManager } from './utils/history.js';
-import { setupCommands } from './utils/botmenu.js';
-import { formatTelegramHTMLMessage } from './utils/output_message_format.js';
+import { setupCommands, bot } from './utils/botmenu.js';
+import { Output } from './utils/output_message_format.js';
 import { generateImage } from './services/stablediffusion.js';
+import { constraints } from './utils/Input_constraints.js';
 import express from 'express';
 const app = express();
 const port = process.env.PORT || 3000;
@@ -36,7 +35,7 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
 });
-const bot = new TelegramBot(config.telegramToken, { polling: true });
+
 const userModels = new Map();
 const conversationManager = new ConversationManager();
 
@@ -45,42 +44,24 @@ setupCommands(bot, conversationManager, userModels);
 
 // Add this command handler after your other bot.on handlers
 bot.onText(/\/imagine(?:@\w+)? (.+)/, async (msg, match) => {
-    const chatId = msg.chat.id;
-    const prompt = match[1];
-   // Define Owner Words
-const OwnerWords = ['Saurab', 'Saurabh', 'Saurav', 'Tiwari', 'tivari', 'Tiwary', 'soura', 'saur','tiwa'];
+  const chatId = msg.chat.id;
+  const prompt = match[1];
+  // Define Owner Words
+  constraints(prompt, bot, chatId);
+  try {
+    bot.sendChatAction(chatId, 'upload_photo');
 
-// Function to create a regex pattern that allows repeated letters in a word
-function createPatternWithRepeatedLetters(word) {
-    const letters = word.split('');
-    const pattern = letters.map(letter => `${letter}+`).join('');
-    return pattern;
-}
+    // Generate image
+    const imageBuffer = await generateImage(prompt);
 
-// Build the regex pattern
-const ownerPatterns = OwnerWords.map(word => createPatternWithRepeatedLetters(word));
-const regexx = new RegExp(`(${ownerPatterns.join('|')})`, 'i');
-
-// Check if the input text matches the pattern
-if (regexx.test(prompt)) {
-    await bot.sendMessage(chatId, 'Maalik pe no Comment.');
-    return; // Stop further processing
-}
-
-    try {
-        bot.sendChatAction(chatId, 'upload_photo');
-
-        // Generate image
-        const imageBuffer = await generateImage(prompt);
-
-        // Send the image back to user
-        await bot.sendPhoto(chatId, imageBuffer, {
-            caption: `Generated image for: ${prompt}`
-        });
-    } catch (error) {
-        console.error('Image generation error:', error);
-        bot.sendMessage(chatId, 'Sorry, I had trouble generating that image. Please try again.');
-    }
+    // Send the image back to user
+    await bot.sendPhoto(chatId, imageBuffer, {
+      caption: `Generated image for: ${prompt}`
+    });
+  } catch (error) {
+    console.error('Image generation error:', error);
+    bot.sendMessage(chatId, 'Sorry, I had trouble generating that image. Please try again.');
+  }
 });
 
 // Handle text messages
@@ -90,49 +71,31 @@ bot.on('message', async (msg) => {
   const botUsername = (await bot.getMe()).username;
   const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
 
- // Ignore if no text or is a photo
- if (!text || msg.photo) return;
+  // Ignore if no text or is a photo
+  if (!text || msg.photo) return;
 
- // Check for commands with username in group
- if (isGroupChat) {
-     // Remove spaces between username and command
-     const normalizedText = text.replace(`@${botUsername}`, '').trim();
-     if (normalizedText.startsWith('/')) return;
- } else {
-     // Direct message command check
-     if (text.trimStart().startsWith('/')) return;
- }
+  // Check for commands with username in group
+  if (isGroupChat) {
+    // Remove spaces between username and command
+    const normalizedText = text.replace(`@${botUsername}`, '').trim();
+    if (normalizedText.startsWith('/')) return;
+  } else {
+    // Direct message command check
+    if (text.trimStart().startsWith('/')) return;
+  }
 
- // Check if bot is mentioned in group chat
- if (isGroupChat && !text.includes(`@${botUsername}`)) return;
+  // Check if bot is mentioned in group chat
+  if (isGroupChat && !text.includes(`@${botUsername}`)) return;
 
   // Detect prohibited words in user input
   const prohibitedWords = ['porn', 'xvideos'];
   const regex = new RegExp(`\\b(${prohibitedWords.join('|')})\\b`, 'i');
   if (regex.test(text)) {
-      await bot.sendMessage(chatId, 'Bhag Bsdk! Ye Koi Randikhana Hai.');
-      return; // Stop further processing
-  }
-  // Define Owner Words
-const OwnerWords = ['Saurab', 'Saurabh', 'Saurav', 'Tiwari', 'tivari', 'Tiwary', 'soura', 'saur','tiwa'];
-
-// Function to create a regex pattern that allows repeated letters in a word
-function createPatternWithRepeatedLetters(word) {
-    const letters = word.split('');
-    const pattern = letters.map(letter => `${letter}+`).join('');
-    return pattern;
-}
-
-// Build the regex pattern
-const ownerPatterns = OwnerWords.map(word => createPatternWithRepeatedLetters(word));
-const regexx = new RegExp(`(${ownerPatterns.join('|')})`, 'i');
-
-// Check if the input text matches the pattern
-if (regexx.test(text)) {
-    await bot.sendMessage(chatId, 'Maalik pe no Comment.');
+    await bot.sendMessage(chatId, 'Bhag Bsdk! Ye Koi Randikhana Hai.');
     return; // Stop further processing
-}
-  
+  }
+  constraints(text, bot, chatId);
+
   try {
     bot.sendChatAction(chatId, 'typing');
 
@@ -140,16 +103,16 @@ if (regexx.test(text)) {
 
     // Fetch message history
     const history = conversationManager.get(chatId);
-console.log(history);
+    console.log(history);
     // Add user message to history
     history.push({ role: 'user', content: text });
-console.log(history);
+    console.log(history);
     let response = '';
     if (model === 'gemini') {
       response = await getGeminiResponse(history);
     } else if (model === 'llama') {
       response = await getLlamaResponse(history);
-    }else if (model === 'mistral') {
+    } else if (model === 'mistral') {
       response = await getMistralResponse(history);
     } else {
       response = await getGPTResponse(history);
@@ -162,13 +125,8 @@ console.log(history);
     conversationManager.add(chatId, { role: 'user', content: text });
     conversationManager.add(chatId, { role: 'bot', content: response });
 
-   const messageChunks =  formatTelegramHTMLMessage(response);
-// Send each chunk as a separate message
-for (const chunk of messageChunks) {
-  await bot.sendMessage(chatId, chunk, {
-    parse_mode: 'HTML',
-  });
-}
+    Output(response, bot, chatId);
+
   } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I encountered an error. Please try again later.');
@@ -180,14 +138,14 @@ bot.on('photo', async (msg) => {
   const chatId = msg.chat.id;
   const photo = msg.photo[msg.photo.length - 1]; // Get the highest resolution photo
   const caption = msg.caption || "What's in this image?";
-    // Check if the message is in a group chat and if the caption includes the bot's username
-    const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
-    const botUsername = (await bot.getMe()).username;
-  
-    if (isGroupChat && (!caption || !caption.includes(`@${botUsername}`))) {
-      // In group chats, only process photos if the caption includes the bot's username
-      return;
-    }
+  // Check if the message is in a group chat and if the caption includes the bot's username
+  const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
+  const botUsername = (await bot.getMe()).username;
+
+  if (isGroupChat && (!caption || !caption.includes(`@${botUsername}`))) {
+    // In group chats, only process photos if the caption includes the bot's username
+    return;
+  }
 
   try {
     bot.sendChatAction(chatId, 'typing');
@@ -209,14 +167,7 @@ bot.on('photo', async (msg) => {
       analysis = await analyzeImageWithGemini(imageBuffer, caption);
     }
 
-    // Sanitize and send formatted analysis
-    const messageChunks =  formatTelegramHTMLMessage(analysis);
-    // Send each chunk as a separate message
-    for (const chunk of messageChunks) {
-      await bot.sendMessage(chatId, chunk, {
-        parse_mode: 'HTML',
-      });
-    }
+    Output(analysis, bot, chatId);
   } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that image. Please try again.');
