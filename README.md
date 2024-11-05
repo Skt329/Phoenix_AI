@@ -1,4 +1,6 @@
-# Multimodal AI Telegram Bot
+# Phoenix AI Telegram Bot
+
+<img alt="Telegram Bot" src="https://img.shields.io/badge/Telegram-@phoenix__7ai-blue">
 
 Welcome to the **Multimodal AI Telegram Bot** project! This bot integrates multiple AI models to provide rich interactions via text and images on Telegram.
 
@@ -102,6 +104,10 @@ config.js
   ```bash
   npm start
   ```
+### Accessing the Bot
+You can interact with the bot on Telegram:
+
+**Bot Link:** [Phoenix Ai](t.me/phoenix_7ai)
 
 ### Interacting with the Bot
 
