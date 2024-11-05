@@ -65,7 +65,7 @@ Welcome to the **Multimodal AI Telegram Bot** project! This bot integrates multi
    HUGGINGFACE_TOKEN=your-huggingface-token
    ```
 
-2. **Configure [`src/config.js`](src/config.js):
+2. **Configure [`src/config.js`](src/config.js)**:
    The configuration is handled by the [`src/config.js`](src/config.js) file, which reads from the `.env` file.
 
 ## Usage
