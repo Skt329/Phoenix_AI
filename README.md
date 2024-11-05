@@ -52,17 +52,9 @@ Welcome to the **Multimodal AI Telegram Bot** project! This bot integrates multi
 
 ## Configuration
 
-1. **Create a 
+1. **Create a `.env` File**
 
-.env
-
- File**
-
-   Create a 
-
-.env
-
- file in the root directory and add your API keys:
+   Create a `.env` file in the root directory and add your API keys:
 
    ```env
    TELEGRAM_BOT_TOKEN=your-telegram-bot-token
@@ -73,21 +65,8 @@ Welcome to the **Multimodal AI Telegram Bot** project! This bot integrates multi
    HUGGINGFACE_TOKEN=your-huggingface-token
    ```
 
-2. **Configure 
-
-config.js
-
-**
-
-   The configuration is handled by the 
-
-config.js
-
- file, which reads from the 
-
-.env
-
- file.
+2. **Configure [`src/config.js`](src/config.js):
+   The configuration is handled by the [`src/config.js`](src/config.js) file, which reads from the `.env` file.
 
 ## Usage
 
