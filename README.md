@@ -86,7 +86,7 @@ Welcome to the **Multimodal AI Telegram Bot** project! This bot integrates multi
 ### Accessing the Bot
 You can interact with the bot on Telegram:
 
-**Bot Link:** [Phoenix Ai](t.me/phoenix_7ai)
+**Bot Link:** [Phoenix Ai](https://t.me/phoenix_7ai)
 
 ### Interacting with the Bot
 
