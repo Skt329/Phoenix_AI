@@ -159,17 +159,8 @@ multimodal-ai-telegram-bot/
 
 - **`src/bot.js`**: Main bot logic and message handlers.
 - **`src/config.js`**: Configuration file handling environment variables.
-- **
-
-services
-
-**: Contains API integration for different AI models.
-- **
-
-utils
-
-**: Utility functions for command setup, conversation history, message formatting, and input constraints.
-
+- [`src/services`](src/services/): Contains API integration for different AI models.
+- [`src/utils`](src/utils/): Utility functions for command setup, conversation history, message formatting, and input constraints.
 
 
 ## Contributing
