@@ -91,7 +91,7 @@ bot.on('message', async (msg) => {
   const prohibitedWords = ['porn', 'xvideos'];
   const regex = new RegExp(`\\b(${prohibitedWords.join('|')})\\b`, 'i');
   if (regex.test(text)) {
-    await bot.sendMessage(chatId, 'Bhag Bsdk! Ye Koi Randikhana Hai.');
+    await bot.sendMessage(chatId, 'Input is not appropriate.');
     return; // Stop further processing
   }
   constraints(text, bot, chatId);
