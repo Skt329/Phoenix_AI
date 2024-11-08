@@ -16,6 +16,7 @@ import { getGPTResponse, analyzeImage } from './services/openai.js';
 import { getGeminiResponse, analyzeImageWithGemini } from './services/gemini.js';
 import { getLlamaResponse } from './services/llama.js';
 import { getMistralResponse } from './services/mistral.js';
+import { getMedicineDetails } from './services/medicine.js';
 import { ConversationManager } from './utils/history.js';
 import { setupCommands, bot } from './utils/botmenu.js';
 import { Output } from './utils/output_message_format.js';
@@ -64,6 +65,24 @@ bot.onText(/\/imagine(?:@\w+)? (.+)/, async (msg, match) => {
   }
 });
 
+
+// Define function schema
+const medicineFunction = {
+  name: "getMedicineDetails",
+  description: "Get medicine information from database",
+  parameters: {
+    type: "object",
+    properties: {
+      medicineName: {
+        type: "string",
+        description: "Medicine name to search"
+      }
+    },
+    required: ["medicineName"]
+  }
+};
+
+
 // Handle text messages
 bot.on('message', async (msg) => {
   const chatId = msg.chat.id;
@@ -95,7 +114,7 @@ bot.on('message', async (msg) => {
     return; // Stop further processing
   }
   constraints(text, bot, chatId);
-
+  let response = '';
   try {
     bot.sendChatAction(chatId, 'typing');
 
@@ -103,31 +122,81 @@ bot.on('message', async (msg) => {
 
     // Fetch message history
     const history = conversationManager.get(chatId);
-    console.log(history);
     // Add user message to history
     history.push({ role: 'user', content: text });
-    console.log(history);
-    let response = '';
-    if (model === 'gemini') {
+
+     // Function detection using Gemini
+  // Update the medicine detection prompt
+const functionPrompt = [{
+  role: 'user', 
+  content: `Analyze if this query is asking about medicine information.
+    Query: "${text}"
+    
+    If this is about medicine information, effects, or dosage, extract the medicine name and return a JSON response like this:
+    {"isMedicineQuery":true,"medicineName":"MEDICINE_NAME"}
+    
+    If not medicine related, return:
+    {"isMedicineQuery":false,"medicineName":null}
+    
+    Return ONLY the JSON, no other text.`
+}];
+
+    const detection = await getGeminiResponse(functionPrompt);
+    try {
+      const result = JSON.parse(detection);
+      
+      if (result.isMedicineQuery && result.medicineName) {
+        // Show searching message
+        await bot.sendMessage(chatId, `Searching for information about ${result.medicineName}...`);
+  
+        // Get medicine details
+        const medicineInfo = await getMedicineDetails(result.medicineName);
+  
+        // Combine medicine info with user query for context
+        const prompt = [{
+          role: 'user',
+          content: `Medicine Information:\n${medicineInfo}\n\nUser Question: ${text}\n\nProvide a clear and concise response addressing the user's question using the medicine information provided.`
+        }];
+  
+        // Get response using selected model
+        if (model === 'gemini') {
+          response = await getGeminiResponse(prompt);
+        } else if (model === 'llama') {
+          response = await getLlamaResponse(prompt[0].content);
+        } else if (model === 'mistral') {
+          response = await getMistralResponse(prompt);
+        } else {
+          response = await getGPTResponse(prompt);
+        }
+  
+      } else {
+        // Handle non-medicine queries with regular conversation
+        if (model === 'gemini') {
+          response = await getGeminiResponse(history);
+        } else if (model === 'llama') {
+          response = await getLlamaResponse(text);
+        } else if (model === 'mistral') {
+          response = await getMistralResponse(history);
+        } else {
+          response = await getGPTResponse(history);
+        }
+      }
+  
+      // Add response to history and send
+      history.push({ role: 'bot', content: response });
+      conversationManager.add(chatId, { role: 'user', content: text });
+      conversationManager.add(chatId, { role: 'bot', content: response });
+  
+      Output(response, bot, chatId);
+  
+    } catch (error) {
+      console.error('JSON parsing error:', error);
+      // Fall back to regular conversation if JSON parsing fails
       response = await getGeminiResponse(history);
-    } else if (model === 'llama') {
-      response = await getLlamaResponse(history);
-    } else if (model === 'mistral') {
-      response = await getMistralResponse(history);
-    } else {
-      response = await getGPTResponse(history);
+      Output(response, bot, chatId);
     }
-
-    // Add bot response to history
-    history.push({ role: 'bot', content: response });
-
-    // Update conversation history
-    conversationManager.add(chatId, { role: 'user', content: text });
-    conversationManager.add(chatId, { role: 'bot', content: response });
-
-    Output(response, bot, chatId);
-
-  } catch (error) {
+  
+  }catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I encountered an error. Please try again later.');
   }
@@ -173,6 +242,7 @@ bot.on('photo', async (msg) => {
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that image. Please try again.');
   }
 });
+
 
 console.log('Multimodal Bot is running...');
 

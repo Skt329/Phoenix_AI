@@ -17,6 +17,4 @@ export async function constraints(prompt, bot, chatId) {
         await bot.sendMessage(chatId, 'Maalik pe no Comment.');
         return; // Stop further processing
     }
-
-
 }
