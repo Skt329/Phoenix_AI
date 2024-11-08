@@ -13,7 +13,6 @@ export async function getMedicineDetails(medicineName) {
 
     await page.goto(searchUrl, { waitUntil: 'networkidle2' });
     await page.waitForSelector('a[href*="/drugs/"]');
-
     // Get product link and navigate to details page
     const productLink = await page.evaluate(() => {
       const firstResult = document.querySelector('a[href*="/drugs/"]');
