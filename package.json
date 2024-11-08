@@ -4,7 +4,8 @@
     "type": "module",
     "scripts": {
         "start": "node src/bot.js",
-        "dev": "nodemon src/bot.js"
+        "dev": "nodemon src/bot.js",
+        "heroku-postbuild": "mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
     },
     "dependencies": {
         "@google/generative-ai": "^0.1.3",
