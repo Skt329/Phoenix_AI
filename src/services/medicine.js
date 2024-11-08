@@ -6,7 +6,6 @@ export async function getMedicineDetails(medicineName) {
     const searchUrl = `https://www.1mg.com/search/all?name=${encodedName}`;
 
     const browser = await puppeteer.launch({
-      executablePath: process.env.GOOGLE_CHROME_BIN,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
     const page = await browser.newPage();
