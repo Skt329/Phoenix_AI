@@ -1,8 +1,27 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import {
+  DynamicRetrievalMode,
+  GoogleGenerativeAI,
+} from "@google/generative-ai";
+import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { config } from '../config.js';
+import fs from 'fs';
 
 const genAI = new GoogleGenerativeAI(config.geminiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const fileManager = new GoogleAIFileManager(config.geminiKey);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash",
+//    tools: [
+//   {
+//     googleSearchRetrieval: {
+//       dynamicRetrievalConfig: {
+//         mode: DynamicRetrievalMode.MODE_DYNAMIC,
+//         dynamicThreshold: 0.7,
+//       },
+//     },
+//   },
+// ],
+},
+//{ apiVersion: "v1beta" },
+);
 const generationConfig = {
   temperature: 0.9,
   topP: 0.95,
@@ -59,6 +78,41 @@ export async function analyzeImageWithGemini(imageData, prompt) {
     return response.text();
   } catch (error) {
     console.error('Gemini Vision API Error:', error);
+    throw error;
+  }
+}
+
+export async function analyzeFileWithGemini(fileBuffer, mimeType, prompt) {
+  try {
+    // Create temporary file from buffer
+    const tempFilePath = `temp_${Date.now()}`; // Temporary unique filename
+    await fs.promises.writeFile(tempFilePath, fileBuffer);
+
+    try {
+      // Upload file using path
+      const uploadResponse = await fileManager.uploadFile(tempFilePath, {
+        mimeType: mimeType,
+        displayName: "Uploaded file"
+      });
+
+      // Generate content using file
+      const result = await model.generateContent([
+        {
+          fileData: {
+            mimeType: uploadResponse.file.mimeType,
+            fileUri: uploadResponse.file.uri,
+          }
+        },
+        { text: prompt || "Can you summarize this document?" }
+      ]);
+
+      return result.response.text();
+    } finally {
+      // Clean up temp file
+      await fs.promises.unlink(tempFilePath);
+    }
+  } catch (error) {
+    console.error('Gemini File Analysis Error:', error);
     throw error;
   }
 }

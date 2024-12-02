@@ -11,8 +11,8 @@ export class ConversationManager {
       let history = this.get(chatId);
       history.push(message);
       
-      if (history.length > 10) {
-        history = history.slice(history.length - 10);
+      if (history.length > 50) {
+        history = history.slice(history.length - 50);
       }
       
       this.conversations.set(chatId, history);

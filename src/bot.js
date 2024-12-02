@@ -12,8 +12,9 @@
  * LLaMA) and image analysis.
  */
 import axios from 'axios';
+import { config } from './config.js';
 import { getGPTResponse, analyzeImage } from './services/openai.js';
-import { getGeminiResponse, analyzeImageWithGemini } from './services/gemini.js';
+import { getGeminiResponse, analyzeImageWithGemini, analyzeFileWithGemini } from './services/gemini.js';
 import { getLlamaResponse } from './services/llama.js';
 import { getMistralResponse } from './services/mistral.js';
 import { getMedicineDetails } from './services/medicine.js';
@@ -253,6 +254,33 @@ bot.on('photo', async (msg) => {
   }
 });
 
+// Handle document messages
+bot.on('document', async (msg) => {
+  const chatId = msg.chat.id;
+  const doc = msg.document;
+  const caption = msg.caption || "Can you summarize this document?";
+
+  try {
+    bot.sendChatAction(chatId, 'typing');
+    
+    // Get document file
+    const fileInfo = await bot.getFile(doc.file_id);
+    const fileUrl = `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.file_path}`;
+    
+    // Download file
+    const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+    const fileBuffer = Buffer.from(response.data);
+
+    // Analyze with Gemini
+    const analysis = await analyzeFileWithGemini(fileBuffer, doc.mime_type, caption);
+
+    // Send response
+    await Output(analysis, bot, chatId);
+  } catch (error) {
+    console.error('Document analysis error:', error);
+    bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that document. Please try again.');
+  }
+});
 
 console.log('Multimodal Bot is running...');
 
