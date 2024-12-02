@@ -9,8 +9,9 @@ export function setupCommands(bot, conversationManager, userModels) {
       'Welcome! I am your AI assistant with multimodal capabilities.\n\n' +
       'Commands:\n' +
       '/start - Start the bot\n' +
-      '/clear - Clear conversation history\n' +
       '/imagine -Generate images using stable defusion 3.5\n' +
+      '/clear - Clear conversation history\n' +
+      '/owner - Get Developer info and Contact.\n' +
       'You can send me text, documents or images to analyze!'
     );
   });
