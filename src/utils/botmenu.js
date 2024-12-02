@@ -10,11 +10,8 @@ export function setupCommands(bot, conversationManager, userModels) {
       'Commands:\n' +
       '/start - Start the bot\n' +
       '/clear - Clear conversation history\n' +
-      '/gemini - Switch to Gemini mode\n' +
-      '/gpt - Switch to GPT mode\n' +
-      '/llama - Switch to LLaMA mode\n\n' +
-      '/mistral - Switch to Mistral mode\n\n' +
-      'You can send me text or images to analyze!'
+      '/imagine -Generate images using stable defusion 3.5\n' +
+      'You can send me text, documents or images to analyze!'
     );
   });
 
