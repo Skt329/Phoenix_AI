@@ -27,14 +27,17 @@ export function setupCommands(bot, conversationManager, userModels) {
     const ownerInfo = `👨‍💻 *Bot Owner Information*\n\n` +
     `*Name:* Saurabh Tiwari\n\n` +
     `🔗 *Connect with me:*\n` +
-    `• LinkedIn: [Saurabh Tiwari](https://www.linkedin.com/in/your-linkedin)\n` +
+    `• LinkedIn: [Saurabh Tiwari](https://www.linkedin.com/in/saurabht0)\n` +
     `• GitHub: [SaurabhTiwari](https://github.com/Skt329)\n` +
     `• Email: st108113@gmail.com\n\n` +
     `🤖 *Bot Support:*\n` +
-    `• Telegram: @PhoenixOO7\n` +
+    `• Telegram: [Support Channel](https://t.me/+hrjs8zQHC3UyNDI1)\n` +
     `💡 *Contributions are welcome!*\n` +
     `Check out the project on [GitHub](https://github.com/Skt329/Phoenix_AI)`;
-
+    bot.sendMessage(chatId, ownerInfo, {
+      parse_mode: 'Markdown',
+      disable_web_page_preview: true
+    });
   });
   // Model selection commands
   bot.onText(/\/gemini/, (msg) => {
