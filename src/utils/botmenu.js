@@ -21,7 +21,20 @@ export function setupCommands(bot, conversationManager, userModels) {
     conversationManager.clear(chatId);
     bot.sendMessage(chatId, 'Conversation history cleared!');
   });
+  bot.onText(/\/owner/, (msg) => {
+    const chatId = msg.chat.id;
+    const ownerInfo = `👨‍💻 *Bot Owner Information*\n\n` +
+    `*Name:* Saurabh Tiwari\n\n` +
+    `🔗 *Connect with me:*\n` +
+    `• LinkedIn: [Saurabh Tiwari](https://www.linkedin.com/in/your-linkedin)\n` +
+    `• GitHub: [SaurabhTiwari](https://github.com/Skt329)\n` +
+    `• Email: st108113@gmail.com\n\n` +
+    `🤖 *Bot Support:*\n` +
+    `• Telegram: @PhoenixOO7\n` +
+    `💡 *Contributions are welcome!*\n` +
+    `Check out the project on [GitHub](https://github.com/Skt329/Phoenix_AI)`;
 
+  });
   // Model selection commands
   bot.onText(/\/gemini/, (msg) => {
     const chatId = msg.chat.id;
