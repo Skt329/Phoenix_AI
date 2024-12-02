@@ -259,7 +259,14 @@ bot.on('document', async (msg) => {
   const chatId = msg.chat.id;
   const doc = msg.document;
   const caption = msg.caption || "Can you summarize this document?";
+// Check if the message is in a group chat and if the caption includes the bot's username
+const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
+const botUsername = (await bot.getMe()).username;
 
+if (isGroupChat && (!caption || !caption.includes(`@${botUsername}`))) {
+  // In group chats, only process photos if the caption includes the bot's username
+  return;
+}
   try {
     bot.sendChatAction(chatId, 'typing');
     
