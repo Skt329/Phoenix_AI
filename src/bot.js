@@ -123,7 +123,7 @@ bot.on('message', async (msg) => {
     // Fetch message history
     const history = conversationManager.get(chatId);
     // Add user message to history
-    history.push({ role: 'user', content: text });
+    history.push({ role: 'user', content: text, chatId: chatId });
 
      // Function detection using Gemini
   // Update the medicine detection prompt
@@ -138,12 +138,21 @@ const functionPrompt = [{
     If not medicine related, return:
     {"isMedicineQuery":false,"medicineName":null}
     
-    Return ONLY the JSON, no other text.`
+    Return ONLY the JSON, no other text.` ,
+  chatId: chatId
 }];
-
+function cleanJsonResponse(response) {
+  try {
+    // Remove code blocks and extra whitespace
+    const cleaned = response.replace(/```json\s*|\s*```/g, '').trim();
+    return JSON.parse(cleaned);
+  } catch (error) {
+    throw new Error('Invalid JSON format');
+  }
+}
     const detection = await getGeminiResponse(functionPrompt);
     try {
-      const result = JSON.parse(detection);
+      const result = cleanJsonResponse(detection);
       
       if (result.isMedicineQuery && result.medicineName) {
         // Show searching message
@@ -155,7 +164,8 @@ const functionPrompt = [{
         // Combine medicine info with user query for context
         const prompt = [{
           role: 'user',
-          content: `Medicine Information:\n${medicineInfo}\n\nUser Question: ${text}\n\nProvide a clear and concise response addressing the user's question using the medicine information provided.`
+          content: `Medicine Information:\n${medicineInfo}\n\nUser Question: ${text}\n\nProvide a clear and concise response addressing the user's question using the medicine information provided.` ,
+          chatId: chatId
         }];
   
         // Get response using selected model
@@ -174,7 +184,7 @@ const functionPrompt = [{
         if (model === 'gemini') {
           response = await getGeminiResponse(history);
         } else if (model === 'llama') {
-          response = await getLlamaResponse(text);
+          response = await getLlamaResponse(history);
         } else if (model === 'mistral') {
           response = await getMistralResponse(history);
         } else {
@@ -184,8 +194,8 @@ const functionPrompt = [{
   
       // Add response to history and send
       history.push({ role: 'bot', content: response });
-      conversationManager.add(chatId, { role: 'user', content: text });
-      conversationManager.add(chatId, { role: 'bot', content: response });
+      conversationManager.add(chatId, { role: 'user', content: text, chatId: chatId });
+      conversationManager.add(chatId, { role: 'bot', content: response, chatId: chatId });
   
       Output(response, bot, chatId);
   
