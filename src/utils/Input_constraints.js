@@ -15,6 +15,7 @@ export async function constraints(prompt, bot, chatId) {
     // Check if the input text matches the pattern
     if (regexx.test(prompt)) {
         await bot.sendMessage(chatId, 'Maalik pe no Comment.');
-        return; // Stop further processing
+        return true; // Stop further processing
     }
+    return false;
 }

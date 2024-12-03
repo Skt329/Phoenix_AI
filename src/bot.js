@@ -114,7 +114,10 @@ bot.on('message', async (msg) => {
     await bot.sendMessage(chatId, 'Input is not appropriate.');
     return; // Stop further processing
   }
-  constraints(text, bot, chatId);
+   const isConstrained = await constraints(text, bot, chatId);
+        if (isConstrained) {
+            return; // Stop processing if constraint matched
+        }
   let response = '';
   try {
     bot.sendChatAction(chatId, 'typing');
