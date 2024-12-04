@@ -194,3 +194,16 @@ for (const chunk of messageChunks) {
   });
 }
 }
+
+// New function to handle AI response, format, split, and sort
+export function handleAIResponse(response) {
+    if (!response) return [];
+  
+    // Format and split the response
+    const formattedMessages = formatTelegramHTMLMessage(response);
+  
+    // Sort the messages
+    formattedMessages.sort();
+  
+    return formattedMessages;
+  }

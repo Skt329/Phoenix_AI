@@ -20,7 +20,7 @@ import { getMistralResponse } from './services/mistral.js';
 import { getMedicineDetails } from './services/medicine.js';
 import { ConversationManager } from './utils/history.js';
 import { setupCommands, bot } from './utils/botmenu.js';
-import { Output } from './utils/output_message_format.js';
+import { Output, handleAIResponse } from './utils/output_message_format.js';
 import { generateImage } from './services/stablediffusion.js';
 import { constraints } from './utils/Input_constraints.js';
 import express from 'express';
@@ -291,6 +291,66 @@ if (isGroupChat && (!caption || !caption.includes(`@${botUsername}`))) {
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that document. Please try again.');
   }
 });
+bot.on('inline_query', async (query) => {
+  const inlineQueryId = query.id;
+  const queryText = query.query;
 
+  if (!queryText) return;
+
+  // Check if the query ends with a doller ($) indicating the end of the query
+  if (queryText.trim().endsWith('$')) {
+    try {
+      // Send typing action
+      bot.answerInlineQuery(inlineQueryId, [], { cache_time: 1 });
+
+      // Prepare the system instruction
+    const systemInstruction = {
+      role: 'system',
+      content: 'Please limit your response to 4000 characters or fewer.',
+    };
+
+    // Prepare the user message
+    const userMessage = {
+      role: 'user',
+      content: queryText,
+    };
+
+    // Get response from Gemini with system instruction
+    const response = await getGeminiResponse([systemInstruction, userMessage]);
+ // Handle the AI response
+ const formattedResponses = handleAIResponse(response);
+ const results = formattedResponses.map((formattedResponse, index) => ({
+   type: 'article',
+   id: String(index + 1),
+   title: formattedResponse ,
+   input_message_content: {
+     message_text: formattedResponse,
+     parse_mode: 'HTML',
+   },
+ }));
+
+
+      // Send the results to Telegram
+      bot.answerInlineQuery(inlineQueryId, results);
+    } catch (error) {
+      console.error('Error handling inline query:', error);
+    }
+  } else {
+    // Provide a message indicating that the user should end the query with a period
+    const results = [
+      {
+        type: 'article',
+        id: '1',
+        title: 'Type your query and end with a period ($)',
+        input_message_content: {
+          message_text: 'Please type your query and end it with a period (.) to get a response.',
+        },
+      },
+    ];
+
+    // Send the results to Telegram
+    bot.answerInlineQuery(inlineQueryId, results);
+  }
+});
 console.log('Multimodal Bot is running...');
 

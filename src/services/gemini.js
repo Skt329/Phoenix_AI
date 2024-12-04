@@ -8,7 +8,7 @@ import { config } from '../config.js';
 
 const genAI = new GoogleGenerativeAI(config.geminiKey);
 //const fileManager = new GoogleAIFileManager(config.geminiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash",
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest",
 //    tools: [
 //   {
 //     googleSearchRetrieval: {
