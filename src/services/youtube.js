@@ -15,7 +15,7 @@ return combinedMessage;
    
   } catch (error) {
     console.error('Error extracting YouTube transcript:', error);
-    return null;
+    return 'Error extracting YouTube transcript';
   }
 }
 
