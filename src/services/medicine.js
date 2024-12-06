@@ -1,7 +1,7 @@
 import puppeteer from 'puppeteer';
-import { getGeminiResponse } from './gemini.js';
 
-export async function getMedicineDetails(medicineName, messages) {
+
+export async function getMedicineDetails(medicineName, messages = 'list all the details with substitue medicine details') {
   try {
     const encodedName = encodeURIComponent(medicineName);
     const searchUrl = `https://www.1mg.com/search/all?name=${encodedName}`;
@@ -121,7 +121,7 @@ export async function getMedicineDetails(medicineName, messages) {
         output += '\n';
       });
     }
-    console.log('Fetching medicine');
+    
     const combinedMessage = `${output}\n\n${messages}`;
    
     return combinedMessage;

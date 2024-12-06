@@ -1,7 +1,7 @@
 import { YoutubeTranscript } from 'youtube-transcript';
 
 // Function to extract transcript from YouTube video
-export async function YouTube(videoUrl, message) {
+export async function YouTube(videoUrl, message='Please summarize the video in detail in bullet points.') {
   try {
     
     const transcriptObjects = await YoutubeTranscript.fetchTranscript(videoUrl);
@@ -31,3 +31,4 @@ export function generateYouTubePlaybackLink(videoUrl) {
     return null;
   }
 }
+

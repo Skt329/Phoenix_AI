@@ -8,6 +8,8 @@ import { YouTube} from './youtube.js';
 import { getMedicineDetails } from './medicine.js';
 
 const genAI = new GoogleGenerativeAI(config.geminiKey);
+const model1 = genAI.getGenerativeModel({ 
+  model: "gemini-1.5-flash-latest"});
 const model = genAI.getGenerativeModel({ 
   model: "gemini-1.5-flash-latest",
   tools: [
@@ -25,10 +27,10 @@ const model = genAI.getGenerativeModel({
               },
               prompt: {
                 type: "string",
-                description: "Summerize the video in detail in bullet points or answer the question."
+                description: "User prompt about the youtube video ."
               }
             },
-            required: ["videoUrl"]
+            required: ["videoUrl", "prompt"]
           }
         },
         {
@@ -43,10 +45,10 @@ const model = genAI.getGenerativeModel({
               },
               prompt: {
                 type: "string",
-                description: "list all the details with substitue medicine details or answer the user question about the medicine."
+                description: "User prompt about the medicine."
               }
             },
-            required: ["medicineName"]
+            required: ["medicineName", "prompt"]
           }
         }
       ]
@@ -113,9 +115,8 @@ export async function getGeminiResponse(messages) {
 
     // If a function was called, return its result
     if (functionCallResult) {
-      
-      const results = await model.generateContent(functionCallResult);
-      return results.response.text();
+      const results = await model1.generateContent(functionCallResult);
+    return results.response.text();
     }
 
     // Otherwise, return the regular text response
