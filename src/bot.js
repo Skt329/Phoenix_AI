@@ -114,10 +114,10 @@ bot.on('message', async (msg) => {
     await bot.sendMessage(chatId, 'Input is not appropriate.');
     return; // Stop further processing
   }
-   const isConstrained = await constraints(text, bot, chatId);
-        if (isConstrained) {
-            return; // Stop processing if constraint matched
-        }
+  const isConstrained = await constraints(text, bot, chatId);
+  if (isConstrained) {
+    return; // Stop processing if constraint matched
+  }
   let response = '';
   try {
     bot.sendChatAction(chatId, 'typing');
@@ -129,88 +129,35 @@ bot.on('message', async (msg) => {
     // Add user message to history
     history.push({ role: 'user', content: text, chatId: chatId });
 
-     // Function detection using Gemini
-  // Update the medicine detection prompt
-const functionPrompt = [{
-  role: 'user', 
-  content: `Analyze if this query is asking about medicine information.
-    Query: "${text}"
-    
-    If this is about medicine information, effects, or dosage, extract the medicine name and return a JSON response like this:
-    {"isMedicineQuery":true,"medicineName":"MEDICINE_NAME"}
-    
-    If not medicine related, return:
-    {"isMedicineQuery":false,"medicineName":null}
-    
-    Return ONLY the JSON, no other text.` ,
-  chatId: chatId
-}];
-function cleanJsonResponse(response) {
-  try {
-    // Remove code blocks and extra whitespace
-    const cleaned = response.replace(/```json\s*|\s*```/g, '').trim();
-    return JSON.parse(cleaned);
-  } catch (error) {
-    throw new Error('Invalid JSON format');
-  }
-}
-    const detection = await getGeminiResponse(functionPrompt);
+
+
     try {
-      const result = cleanJsonResponse(detection);
-      
-      if (result.isMedicineQuery && result.medicineName) {
-        // Show searching message
-        await bot.sendMessage(chatId, `Searching for information about ${result.medicineName}...`);
-  
-        // Get medicine details
-        const medicineInfo = await getMedicineDetails(result.medicineName);
-  
-        // Combine medicine info with user query for context
-        const prompt = [{
-          role: 'user',
-          content: `Medicine Information:\n${medicineInfo}\n\nUser Question: ${text}\n\nProvide a clear and concise response addressing the user's question using the medicine information provided.` ,
-          chatId: chatId
-        }];
-  
-        // Get response using selected model
-        if (model === 'gemini') {
-          response = await getGeminiResponse(prompt);
-        } else if (model === 'llama') {
-          response = await getLlamaResponse(prompt[0].content);
-        } else if (model === 'mistral') {
-          response = await getMistralResponse(prompt);
-        } else {
-          response = await getGPTResponse(prompt);
-        }
-  
+      if (model === 'gemini') {
+        response = await getGeminiResponse(history);
+      } else if (model === 'llama') {
+        response = await getLlamaResponse(history);
+      } else if (model === 'mistral') {
+        response = await getMistralResponse(history);
       } else {
-        // Handle non-medicine queries with regular conversation
-        if (model === 'gemini') {
-          response = await getGeminiResponse(history);
-        } else if (model === 'llama') {
-          response = await getLlamaResponse(history);
-        } else if (model === 'mistral') {
-          response = await getMistralResponse(history);
-        } else {
-          response = await getGPTResponse(history);
-        }
+        response = await getGPTResponse(history);
       }
-  
+
+
       // Add response to history and send
       history.push({ role: 'bot', content: response });
       conversationManager.add(chatId, { role: 'user', content: text, chatId: chatId });
       conversationManager.add(chatId, { role: 'bot', content: response, chatId: chatId });
-  
+
       Output(response, bot, chatId);
-  
+
     } catch (error) {
       console.error('JSON parsing error:', error);
       // Fall back to regular conversation if JSON parsing fails
       response = await getGeminiResponse(history);
       Output(response, bot, chatId);
     }
-  
-  }catch (error) {
+
+  } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I encountered an error. Please try again later.');
   }
@@ -262,21 +209,21 @@ bot.on('document', async (msg) => {
   const chatId = msg.chat.id;
   const doc = msg.document;
   const caption = msg.caption || "Can you summarize this document?";
-// Check if the message is in a group chat and if the caption includes the bot's username
-const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
-const botUsername = (await bot.getMe()).username;
+  // Check if the message is in a group chat and if the caption includes the bot's username
+  const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
+  const botUsername = (await bot.getMe()).username;
 
-if (isGroupChat && (!caption || !caption.includes(`@${botUsername}`))) {
-  // In group chats, only process photos if the caption includes the bot's username
-  return;
-}
+  if (isGroupChat && (!caption || !caption.includes(`@${botUsername}`))) {
+    // In group chats, only process photos if the caption includes the bot's username
+    return;
+  }
   try {
     bot.sendChatAction(chatId, 'typing');
-    
+
     // Get document file
     const fileInfo = await bot.getFile(doc.file_id);
     const fileUrl = `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.file_path}`;
-    
+
     // Download file
     const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
     const fileBuffer = Buffer.from(response.data);
@@ -304,30 +251,30 @@ bot.on('inline_query', async (query) => {
       bot.answerInlineQuery(inlineQueryId, [], { cache_time: 1 });
 
       // Prepare the system instruction
-    const systemInstruction = {
-      role: 'system',
-      content: 'Please limit your response to 4000 characters or fewer.',
-    };
+      const systemInstruction = {
+        role: 'system',
+        content: 'Please limit your response to 4000 characters or fewer.',
+      };
 
-    // Prepare the user message
-    const userMessage = {
-      role: 'user',
-      content: queryText,
-    };
+      // Prepare the user message
+      const userMessage = {
+        role: 'user',
+        content: queryText,
+      };
 
-    // Get response from Gemini with system instruction
-    const response = await getGeminiResponse([systemInstruction, userMessage]);
- // Handle the AI response
- const formattedResponses = handleAIResponse(response);
- const results = formattedResponses.map((formattedResponse, index) => ({
-   type: 'article',
-   id: String(index + 1),
-   title: formattedResponse ,
-   input_message_content: {
-     message_text: formattedResponse,
-     parse_mode: 'HTML',
-   },
- }));
+      // Get response from Gemini with system instruction
+      const response = await getGeminiResponse([systemInstruction, userMessage]);
+      // Handle the AI response
+      const formattedResponses = handleAIResponse(response);
+      const results = formattedResponses.map((formattedResponse, index) => ({
+        type: 'article',
+        id: String(index + 1),
+        title: formattedResponse,
+        input_message_content: {
+          message_text: formattedResponse,
+          parse_mode: 'HTML',
+        },
+      }));
 
 
       // Send the results to Telegram

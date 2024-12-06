@@ -16,7 +16,8 @@
         "express": "^4.21.1",
         "node-telegram-bot-api": "^0.64.0",
         "openai": "^4.20.1",
-        "puppeteer": "^23.7.1"
+        "puppeteer": "^23.7.1",
+        "youtube-transcript": "^1.2.1"
     },
     "devDependencies": {
         "nodemon": "^3.0.2"

@@ -4,29 +4,67 @@ import {
 } from "@google/generative-ai";
 //import { GoogleAIFileManager } from "@google/generative-ai/server";
 import { config } from '../config.js';
-
+import { YouTube} from './youtube.js';
+import { getMedicineDetails } from './medicine.js';
 
 const genAI = new GoogleGenerativeAI(config.geminiKey);
-//const fileManager = new GoogleAIFileManager(config.geminiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest",
-//    tools: [
-//   {
-//     googleSearchRetrieval: {
-//       dynamicRetrievalConfig: {
-//         mode: DynamicRetrievalMode.MODE_DYNAMIC,
-//         dynamicThreshold: 0.7,
-//       },
-//     },
-//   },
-// ],
-},
-//{ apiVersion: "v1beta" },
-);
+const model = genAI.getGenerativeModel({ 
+  model: "gemini-1.5-flash-latest",
+  tools: [
+    {
+      functionDeclarations: [
+        {
+          name: "YouTube",
+          description: "Extract transcript from a YouTube video and answer the prompt",
+          parameters: {
+            type: "object",
+            properties: {
+              videoUrl: {
+                type: "string",
+                description: "Full YouTube video URL"
+              },
+              prompt: {
+                type: "string",
+                description: "Summerize the video in detail in bullet points or answer the question."
+              }
+            },
+            required: ["videoUrl"]
+          }
+        },
+        {
+          name: "getMedicineDetails",
+          description: "Get detailed information about a medicine",
+          parameters: {
+            type: "object",
+            properties: {
+              medicineName: {
+                type: "string",
+                description: "Name of the medicine to look up"
+              },
+              prompt: {
+                type: "string",
+                description: "list all the details with substitue medicine details or answer the user question about the medicine."
+              }
+            },
+            required: ["medicineName"]
+          }
+        }
+      ]
+    }
+  ],
+  toolConfig: {
+    functionCallingConfig: {
+      mode: "AUTO"
+    }
+  }
+});
+
 const generationConfig = {
   temperature: 0.9,
   topP: 0.95,
   topK: 40,
   maxOutputTokens: 8192,
+  responseMimeType: "text/plain",
 };
 
 export async function getGeminiResponse(messages) {
@@ -40,26 +78,47 @@ export async function getGeminiResponse(messages) {
     // Get the last message for special handling
     const lastMessage = messages[messages.length - 1];
 
-    // Check if this is a function detection prompt
-    if (lastMessage.content.includes('{"isMedicineQuery"')) {
-      // For function detection, use a different configuration with lower temperature
-      const functionResult = await model.generateContent({
-        contents: [{ role: 'user', parts: [{ text: lastMessage.content }] }],
-        generationConfig: {
-          ...generationConfig,
-          temperature: 0.1, // Lower temperature for more precise JSON output
+    // Function to handle function calling
+    async function handleFunctionCalling(response) {
+      for (const candidate of response.candidates) {
+        for (const part of candidate.content.parts) {
+          if (part.functionCall) {
+            const functionName = part.functionCall.name;
+            const args = part.functionCall.args;
+
+            switch (functionName) {
+              case 'YouTube':
+                return await YouTube(args.videoUrl, args.prompt);
+              case 'getMedicineDetails':
+                return await getMedicineDetails(args.medicineName, args.prompt);
+              default:
+                return 'Unknown function called';
+            }
+            
+          }
         }
-      });
-      return functionResult.response.text();
+      }
+      return null;
     }
 
-    // For regular conversations, create a new chat with history
+    // Start chat with function detection configuration
     const chat = model.startChat({
       generationConfig,
-      history: geminiMessages.slice(0, -1) // Use all messages except the last one as history
+      history: geminiMessages.slice(0, -1)
     });
 
+    // Send message and check for function calls
     const result = await chat.sendMessage(lastMessage.content);
+    const functionCallResult = await handleFunctionCalling(result.response);
+
+    // If a function was called, return its result
+    if (functionCallResult) {
+      
+      const results = await model.generateContent(functionCallResult);
+      return results.response.text();
+    }
+
+    // Otherwise, return the regular text response
     return result.response.text();
     
   } catch (error) {
@@ -68,7 +127,7 @@ export async function getGeminiResponse(messages) {
   }
 }
 
-export async function analyzeImageWithGemini(imageData, prompt) {
+export async function analyzeImageWithGemini(imageData, prompt) {       
   try {
     const result = await model.generateContent([
       prompt || "What's in this image?",
