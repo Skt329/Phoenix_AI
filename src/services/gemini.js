@@ -30,7 +30,7 @@ const model = genAI.getGenerativeModel({
                 description: "User prompt about the youtube video ."
               }
             },
-            required: ["videoUrl", "prompt"]
+            required: ["videoUrl"]
           }
         },
         {
@@ -66,7 +66,6 @@ const generationConfig = {
   topP: 0.95,
   topK: 40,
   maxOutputTokens: 8192,
-  responseMimeType: "text/plain",
 };
 
 export async function getGeminiResponse(messages) {

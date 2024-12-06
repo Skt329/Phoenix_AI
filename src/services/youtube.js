@@ -1,14 +1,29 @@
-import { YoutubeTranscript } from 'youtube-transcript';
+import ytdl from 'ytdl-core';
+import axios from 'axios';
+import * as cheerio from 'cheerio';
+
 
 // Function to extract transcript from YouTube video
 export async function YouTube(videoUrl, message='Please summarize the video in detail in bullet points.') {
   try {
-    
-    const transcriptObjects = await YoutubeTranscript.fetchTranscript(videoUrl);
-     // Convert transcript objects to a readable string format
-     const transcript = transcriptObjects.map(obj => obj.text).join(' ');
+    const videoId = ytdl.getVideoID(videoUrl);
+    const videoInfoUrl = `https://youtubetotranscript.com/transcript?v=${videoId}`;
+    // Fetch the HTML content of the webpage
+    const { data } = await axios.get(videoInfoUrl);
 
-      // Combine transcript with user prompt
+    // Load the HTML content into Cheerio
+    const $ = cheerio.load(data);
+
+    // Select the transcript element
+    const transcriptElement = $('#transcript p');
+
+    // Extract the text content of the transcript
+    let transcript = '';
+    transcriptElement.find('span').each((index, element) => {
+      transcript += $(element).text() + ' ';
+    });
+
+    // Print the transcript
       const combinedMessage = `${transcript}\n\n${message}`;
 
 return combinedMessage;
