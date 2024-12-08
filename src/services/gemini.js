@@ -12,6 +12,7 @@ const model1 = genAI.getGenerativeModel({
   model: "gemini-1.5-flash-latest"});
 const model = genAI.getGenerativeModel({ 
   model: "gemini-1.5-flash-latest",
+  systemInstruction:'You are a multimodel Ai bot that can answer user questions based on their text images documents or audios  and can perform tasks based on the user input if it required. You can also call functions to perform specific tasks if required. ',
   tools: [
     {
       functionDeclarations: [
@@ -62,7 +63,7 @@ const model = genAI.getGenerativeModel({
 });
 
 const generationConfig = {
-  temperature: 0.9,
+  temperature: 1.3,
   topP: 0.95,
   topK: 40,
   maxOutputTokens: 8192,
@@ -159,3 +160,4 @@ export async function analyzeFileWithGemini(fileBuffer, mimeType, prompt) {
     throw error;
   }
 }
+

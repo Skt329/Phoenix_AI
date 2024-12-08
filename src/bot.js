@@ -227,6 +227,72 @@ bot.on('document', async (msg) => {
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that document. Please try again.');
   }
 });
+
+
+// Handle voice messages
+bot.on('voice', async (msg) => {
+  const chatId = msg.chat.id;
+  const voice = msg.voice;
+  const caption = msg.caption || "Respond to the prompt in detail.";
+  const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
+  const botUsername = (await bot.getMe()).username;
+
+  if (isGroupChat && (!caption || !caption.includes(`@${botUsername}`))) {
+    return;
+  }
+
+  try {
+    bot.sendChatAction(chatId, 'typing');
+
+    const fileInfo = await bot.getFile(voice.file_id);
+    const fileUrl = `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.file_path}`;
+
+    const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+    const fileBuffer = Buffer.from(response.data);
+
+    const analysis = await analyzeFileWithGemini(fileBuffer, 'audio/ogg', caption);
+
+    await Output(analysis, bot, chatId);
+  } catch (error) {
+    console.error('Voice message analysis error:', error);
+    bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that voice message. Please try again.');
+  }
+});
+
+// Handle audio messages
+bot.on('audio', async (msg) => {
+  const chatId = msg.chat.id;
+  const audio = msg.audio;
+  const caption = msg.caption || "Respond to the prompt in detail.";
+  const isGroupChat = msg.chat.type === 'group' || msg.chat.type === 'supergroup';
+  const botUsername = (await bot.getMe()).username;
+
+  if (isGroupChat && (!caption || !caption.includes(`@${botUsername}`))) {
+    return;
+  }
+
+  try {
+    bot.sendChatAction(chatId, 'typing');
+
+    const fileInfo = await bot.getFile(audio.file_id);
+    const fileUrl = `https://api.telegram.org/file/bot${config.telegramToken}/${fileInfo.file_path}`;
+
+    const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
+    const fileBuffer = Buffer.from(response.data);
+
+    const analysis = await analyzeFileWithGemini(fileBuffer, audio.mime_type, caption);
+
+    await Output(analysis, bot, chatId);
+  } catch (error) {
+    console.error('Audio message analysis error:', error);
+    bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that audio message. Please try again.');
+  }
+});
+
+
+
+
+// Handle inline queries
 bot.on('inline_query', async (query) => {
   const inlineQueryId = query.id;
   const queryText = query.query;
@@ -290,4 +356,3 @@ bot.on('inline_query', async (query) => {
 });
 console.log('Multimodal Bot is running...');
 
-bot.deleteMessage
