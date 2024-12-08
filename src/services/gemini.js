@@ -27,7 +27,7 @@ const model = genAI.getGenerativeModel({
               },
               prompt: {
                 type: "string",
-                description: "User prompt about the youtube video ."
+                description: "User prompt about the youtube video. Defaukt prompt is : Summarize the video in detail in bullet points ."
               }
             },
             required: ["videoUrl"]
@@ -45,10 +45,10 @@ const model = genAI.getGenerativeModel({
               },
               prompt: {
                 type: "string",
-                description: "User prompt about the medicine."
+                description: "User prompt about the medicine. Default prompt is : List all the details with substitute medicine details." 
               }
             },
-            required: ["medicineName", "prompt"]
+            required: ["medicineName"]
           }
         }
       ]

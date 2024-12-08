@@ -17,7 +17,7 @@ import { getGPTResponse, analyzeImage } from './services/openai.js';
 import { getGeminiResponse, analyzeImageWithGemini, analyzeFileWithGemini } from './services/gemini.js';
 import { getLlamaResponse } from './services/llama.js';
 import { getMistralResponse } from './services/mistral.js';
-import { getMedicineDetails } from './services/medicine.js';
+
 import { ConversationManager } from './utils/history.js';
 import { setupCommands, bot } from './utils/botmenu.js';
 import { Output, handleAIResponse } from './utils/output_message_format.js';
@@ -67,21 +67,6 @@ bot.onText(/\/imagine(?:@\w+)? (.+)/, async (msg, match) => {
 });
 
 
-// Define function schema
-const medicineFunction = {
-  name: "getMedicineDetails",
-  description: "Get medicine information from database",
-  parameters: {
-    type: "object",
-    properties: {
-      medicineName: {
-        type: "string",
-        description: "Medicine name to search"
-      }
-    },
-    required: ["medicineName"]
-  }
-};
 
 
 // Handle text messages
@@ -127,28 +112,32 @@ bot.on('message', async (msg) => {
     // Fetch message history
     const history = conversationManager.get(chatId);
     // Add user message to history
-    history.push({ role: 'user', content: text, chatId: chatId });
-
+    history.push({ role: 'user', content: text, message_id: msg.message_id });
+    conversationManager.add(chatId, history);
+// Extract only role and content for AI processing
+const aiHistory = history.map(({ role, content }) => ({ role, content }));
 
 
     try {
       if (model === 'gemini') {
-        response = await getGeminiResponse(history);
+        response = await getGeminiResponse(aiHistory);
       } else if (model === 'llama') {
-        response = await getLlamaResponse(history);
+        response = await getLlamaResponse(aiHistory);
       } else if (model === 'mistral') {
-        response = await getMistralResponse(history);
+        response = await getMistralResponse(aiHistory);
       } else {
-        response = await getGPTResponse(history);
+        response = await getGPTResponse(aiHistory);
       }
 
 
       // Add response to history and send
-      history.push({ role: 'bot', content: response });
-      conversationManager.add(chatId, { role: 'user', content: text, chatId: chatId });
-      conversationManager.add(chatId, { role: 'bot', content: response, chatId: chatId });
+      const messageIds = await Output(response, bot, chatId);
+   
+      history.push({ role: 'bot', content: response, message_ids: messageIds });
+      conversationManager.add(chatId, history);
+   
 
-      Output(response, bot, chatId);
+      
 
     } catch (error) {
       console.error('JSON parsing error:', error);
@@ -301,3 +290,4 @@ bot.on('inline_query', async (query) => {
 });
 console.log('Multimodal Bot is running...');
 
+bot.deleteMessage

@@ -188,11 +188,14 @@ function formatTelegramHTMLMessage(text) {
 export async function Output (text,bot,chatId) {
     const messageChunks =  formatTelegramHTMLMessage(text);
 // Send each chunk as a separate message
+let messageIds = [] ;
 for (const chunk of messageChunks) {
-  await bot.sendMessage(chatId, chunk, {
+    const sentMessage = await bot.sendMessage(chatId, chunk, {
     parse_mode: 'HTML',
   });
+  messageIds.push(sentMessage.message_id);
 }
+return messageIds;
 }
 
 // New function to handle AI response, format, split, and sort

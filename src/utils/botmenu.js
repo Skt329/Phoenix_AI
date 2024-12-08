@@ -9,10 +9,15 @@ export function setupCommands(bot, conversationManager, userModels) {
       'Welcome! I am your AI assistant with multimodal capabilities.\n\n' +
       'Commands:\n' +
       '/start - Start the bot\n' +
+      '/gemini - Switch to Gemini AI model\n' +
+      '/mistral - Switch to Mistral AI model\n' +
       '/imagine -Generate images using stable defusion 3.5\n' +
       '/clear - Clear conversation history\n' +
+      '/delete - Delete a specific message from chat context.\n' +
       '/owner - Get Developer info and Contact.\n' +
-      'You can send me text, documents or images to analyze!'
+      'You can send me text, documents or images to analyze!\n'+
+      'You can also switch between different AI models using the commands:/mistral or /gemini\n' +
+      'Default model is Gemini\n'
     );
   });
 
@@ -43,7 +48,7 @@ export function setupCommands(bot, conversationManager, userModels) {
   bot.onText(/\/gemini/, (msg) => {
     const chatId = msg.chat.id;
     userModels.set(chatId, 'gemini');
-    bot.sendMessage(chatId, 'Switched to Gemini mode!');
+    bot.sendMessage(chatId, 'Switched to Gemini mode! ');
   });
 
   bot.onText(/\/gpt/, (msg) => {
@@ -62,6 +67,27 @@ export function setupCommands(bot, conversationManager, userModels) {
     const chatId = msg.chat.id;
     userModels.set(chatId, 'mistral');
     bot.sendMessage(chatId, 'Switched to Mistral mode!');
+  });
+
+  // Delete command
+  bot.onText(/\/delete/, async (msg) => {
+    const chatId = msg.chat.id;
+    const replyToMessage = msg.reply_to_message;
+
+    if (replyToMessage) {
+      const messageIdToDelete = replyToMessage.message_id;
+
+      // Delete the message from the conversation history
+      conversationManager.deleteMessageFromHistory(chatId, messageIdToDelete);
+
+      // Delete the message from the chat
+      await bot.deleteMessage(chatId, messageIdToDelete);
+      // Delete the /delete command message itself
+      await bot.deleteMessage(chatId, msg.message_id);
+      console.log(`Message deleted: ${messageIdToDelete}`);
+    } else {
+      await bot.sendMessage(chatId, 'Please reply to the message you want to delete with /delete.');
+    }
   });
 }
 export const bot = new TelegramBot(config.telegramToken, { polling: true });
