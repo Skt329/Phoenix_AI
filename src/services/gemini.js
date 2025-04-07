@@ -9,9 +9,9 @@ import { getMedicineDetails } from './medicine.js';
 
 const genAI = new GoogleGenerativeAI(config.geminiKey);
 const model1 = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash-latest"});
+  model: "gemini-2.5-pro-exp-03-25"});
 const model = genAI.getGenerativeModel({ 
-  model: "gemini-1.5-flash-latest",
+  model: "gemini-2.5-pro-exp-03-25",
   systemInstruction:'You are a multimodel Ai bot that can answer user questions based on their text images documents or audios  and can perform tasks based on the user input if it required. You can also call functions to perform specific tasks if required. ',
   tools: [
     {
