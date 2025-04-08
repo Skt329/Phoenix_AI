@@ -107,7 +107,7 @@ bot.on('message', async (msg) => {
   try {
     bot.sendChatAction(chatId, 'typing');
 
-    const model = userModels.get(chatId) || 'mistral';
+    const model = userModels.get(chatId) || 'gemini'; // Default to Gemini if no model is set
 
     // Fetch message history
     const history = conversationManager.get(chatId);

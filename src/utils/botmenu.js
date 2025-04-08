@@ -15,9 +15,13 @@ export function setupCommands(bot, conversationManager, userModels) {
       '/clear - Clear conversation history\n' +
       '/delete - Delete a specific message from chat context.\n' +
       '/owner - Get Developer info and Contact.\n' +
-      'You can send me text, documents, audio or images to analyze!\n'+
-      'You can also switch between different AI models using the commands:/mistral or /gemini\n' +
-      'Default model is Mistral\n'
+      '🔹 *Gemini Features*:\n' +
+      '• Real-time internet search capability\n' +
+      '• Process text, documents, audio and images\n\n' +
+      '🔹 *Mistral Features*:\n' +
+      '• YouTube video summarization (Just share the link)\n' +
+      '• Process text and documents\n\n' +
+      'Default model is Gemini - Ready for your questions!\n'
     );
   });
 
