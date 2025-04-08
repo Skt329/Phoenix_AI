@@ -9,7 +9,6 @@
         "heroku-postbuild": "mkdir ./.cache && mv /app/.cache/puppeteer ./.cache"
     },
     "dependencies": {
-        "@google/generative-ai": "^0.21.0",
         "@mistralai/mistralai": "^1.1.0",
         "axios": "^1.6.2",
         "cheerio": "^1.0.0",
@@ -19,7 +18,8 @@
         "openai": "^4.20.1",
         "puppeteer": "^23.7.1",
         "youtube-transcript": "^1.2.1",
-        "ytdl-core": "^4.11.5"
+        "ytdl-core": "^4.11.5",
+        "@google/genai": "^0.7.0"
     },
     "devDependencies": {
         "nodemon": "^3.0.2"

@@ -133,7 +133,7 @@ const aiHistory = history.map(({ role, content }) => ({ role, content }));
       // Add response to history and send
       const messageIds = await Output(response, bot, chatId);
    
-      history.push({ role: 'bot', content: response, message_ids: messageIds });
+      history.push({ role: 'assistant', content: response, message_ids: messageIds });
       conversationManager.add(chatId, history);
    
 
