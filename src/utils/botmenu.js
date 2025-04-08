@@ -17,7 +17,7 @@ export function setupCommands(bot, conversationManager, userModels) {
       '/owner - Get Developer info and Contact.\n' +
       'You can send me text, documents, audio or images to analyze!\n'+
       'You can also switch between different AI models using the commands:/mistral or /gemini\n' +
-      'Default model is Gemini\n'
+      'Default model is Mistral\n'
     );
   });
 
