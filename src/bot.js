@@ -114,30 +114,35 @@ bot.on('message', async (msg) => {
     // Add user message to history
     history.push({ role: 'user', content: text, message_id: msg.message_id });
     conversationManager.add(chatId, history);
-// Extract only role and content for AI processing
-const aiHistory = history.map(({ role, content }) => ({ role, content }));
+    // Extract only role and content for AI processing
+    const aiHistory = history.map(({ role, content }) => ({ role, content }));
 
-
+    let modelName = '';
     try {
       if (model === 'gemini') {
         response = await getGeminiResponse(aiHistory);
+        modelName = '🔵 Gemini';
       } else if (model === 'llama') {
         response = await getLlamaResponse(aiHistory);
+        modelName = '🟢 LLaMA';
       } else if (model === 'mistral') {
         response = await getMistralResponse(aiHistory);
+        modelName = '🟣 Mistral';
       } else {
         response = await getGPTResponse(aiHistory);
+        modelName = '🟡 GPT';
       }
 
-
+      // Add model name to response
+      const responseWithModel = `${modelName}:\n\n${response}`;
       // Add response to history and send
-      const messageIds = await Output(response, bot, chatId);
-   
+      const messageIds = await Output(responseWithModel, bot, chatId);
+
       history.push({ role: 'assistant', content: response, message_ids: messageIds });
       conversationManager.add(chatId, history);
-   
 
-      
+
+
 
     } catch (error) {
       console.error('JSON parsing error:', error);
@@ -179,14 +184,16 @@ bot.on('photo', async (msg) => {
 
     const model = userModels.get(chatId) || 'gemini';
     let analysis;
-
+    let modelName = '';
     if (model === 'gpt') {
       analysis = await analyzeImage(photoUrl, caption);
     } else {
       analysis = await analyzeImageWithGemini(imageBuffer, caption);
+      modelName = '🔵 Gemini';
     }
-
-    Output(analysis, bot, chatId);
+    // Add model name to response
+    const responseWithModel = `${modelName}:\n\n${analysis}`;
+    await Output(responseWithModel, bot, chatId);
   } catch (error) {
     console.error('Error:', error);
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that image. Please try again.');
@@ -216,12 +223,14 @@ bot.on('document', async (msg) => {
     // Download file
     const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
     const fileBuffer = Buffer.from(response.data);
-
+    let modelName = '';
     // Analyze with Gemini
     const analysis = await analyzeFileWithGemini(fileBuffer, doc.mime_type, caption);
-
+    modelName = '🔵 Gemini';
     // Send response
-    await Output(analysis, bot, chatId);
+    const responseWithModel = `${modelName}:\n\n${analysis}`;
+    await Output(responseWithModel, bot, chatId);
+
   } catch (error) {
     console.error('Document analysis error:', error);
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that document. Please try again.');
@@ -249,10 +258,13 @@ bot.on('voice', async (msg) => {
 
     const response = await axios.get(fileUrl, { responseType: 'arraybuffer' });
     const fileBuffer = Buffer.from(response.data);
-
+    let modelName = '';
     const analysis = await analyzeFileWithGemini(fileBuffer, 'audio/ogg', caption);
+    modelName = '🔵 Gemini';
+    // Send response
+    const responseWithModel = `${modelName}:\n\n${analysis}`;
+    await Output(responseWithModel, bot, chatId);
 
-    await Output(analysis, bot, chatId);
   } catch (error) {
     console.error('Voice message analysis error:', error);
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that voice message. Please try again.');
@@ -282,7 +294,10 @@ bot.on('audio', async (msg) => {
 
     const analysis = await analyzeFileWithGemini(fileBuffer, audio.mime_type, caption);
 
-    await Output(analysis, bot, chatId);
+    let modelName = '🔵 Gemini';
+    // Send response
+    const responseWithModel = `${modelName}:\n\n${analysis}`;
+    await Output(responseWithModel, bot, chatId);
   } catch (error) {
     console.error('Audio message analysis error:', error);
     bot.sendMessage(chatId, 'Sorry, I had trouble analyzing that audio message. Please try again.');
